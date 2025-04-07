@@ -1,6 +1,26 @@
 import requests
 import json
 import pandas as pd
+from datetime import datetime
+
+def merge_csv_files(file_paths):
+    
+   def transform_to_long_format(file_paths):
+    # Create an empty list to hold dataframes
+    dataframes = []
+    
+    # Loop through each file path and read it into a dataframe
+    for file_path in file_paths:
+        # Read the CSV file into a dataframe
+        df = pd.read_csv(file_path, sep=";", decimal=",")
+        
+        # Append the dataframe to the list
+        dataframes.append(df)
+    
+    # Concatenate all dataframes in the list into a single dataframe
+    merged_df = pd.concat(dataframes, ignore_index=True)
+    
+    return merged_df
 
 def calculate_pv_module_output(latitude, longitude, efficiency, azimuth, slope, module_power=0.5, system_losses=15, save_output="N"):
 
@@ -132,14 +152,37 @@ PV_subsets = [
 ]
 
 """
+# ------- DEBUG ------
 azimuth = 23  # azimuth angle in degrees (0 = South, 90 = West, -90 = East, 180 = North)
 slope = 35  # 35 degree tilt
 PV_power = 0.47  # Peak power in kW (e.g., 300W = 0.3kW)
+# ----------------------
 """
 
 df = process_multiple_pv_configurations(latitude, longitude, efficiency, *PV_subsets)
 
+"""
+# ------- DEBUG ------
 if isinstance(df, pd.DataFrame):
     print(df.head())
 else:
     print("Returned value is not a DataFrame.")
+# ----------------------
+"""
+
+input_directory = ['/home/santa/Documenti/Energia/WIPTFMs/data/ExportData_gennaio.csv',
+               '/home/santa/Documenti/Energia/WIPTFMs/data/ExportData_febbraio.csv',
+               '/home/santa/Documenti/Energia/WIPTFMs/data/ExportData_marzo.csv',
+               '/home/santa/Documenti/Energia/WIPTFMs/data/ExportData_aprile.csv',
+               '/home/santa/Documenti/Energia/WIPTFMs/data/ExportData_maggio.csv',
+               '/home/santa/Documenti/Energia/WIPTFMs/data/ExportData_giugno.csv',
+               '/home/santa/Documenti/Energia/WIPTFMs/data/ExportData_luglio.csv',
+               '/home/santa/Documenti/Energia/WIPTFMs/data/ExportData_agosto.csv',
+               '/home/santa/Documenti/Energia/WIPTFMs/data/ExportData_settembre.csv',
+               '/home/santa/Documenti/Energia/WIPTFMs/data/ExportData_ottobre.csv',
+               '/home/santa/Documenti/Energia/WIPTFMs/data/ExportData_novembre.csv',
+               '/home/santa/Documenti/Energia/WIPTFMs/data/ExportData_dicembre.csv']
+
+consumption_df = merge_csv_files(input_directory)
+
+print(consumption_df)
