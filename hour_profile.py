@@ -38,14 +38,83 @@ def process_csv(file_paths):
 
     # Itera sulle colonne per calcolare le somme e aggiungerle al nuovo DataFrame
     for i in range(1, len(combined_df.columns) - 3, 4):
-        col_name = f"{combined_df.columns[i+1][:5]}-{combined_df.columns[i+4][-5:]}"
+        # col_name = f"{combined_df.columns[i+1][:5]}-{combined_df.columns[i+4][-5:]}"
+        col_name = int(f"{combined_df.columns[i+1][:2]}")
         new_df[col_name] = combined_df.iloc[:, i:i+4].apply(lambda row: sum(map(lambda x: float(str(x).replace(",", ".")), row)), axis=1)
 
+    print(new_df)
     # new_df = new_df.drop('Giorno', axis=1)
 
     return new_df
 
+def trasforma_dataframe(df):
+    """
+    Trasforma un DataFrame con una colonna 'time' e colonne di dati orarie in un DataFrame
+    con date come righe e ore come colonne, con una terza dimensione per i dati.
 
+    Args:
+        df (pd.DataFrame): DataFrame di input con una colonna 'time' e colonne di dati orarie.
+
+    Returns:
+        pd.DataFrame: DataFrame trasformato, o None se 'time' non esiste.
+    """
+
+    
+    # Estrai i nomi delle colonne dei dati
+    data_cols = [col for col in df.columns if col != 'time']
+
+    # Estrai le date e le ore dalla colonna 'time'
+    df['time'] = pd.to_datetime(df['time'])
+    df['date'] = df['time'].dt.date
+    df['hour'] = df['time'].dt.hour
+
+    # Crea un DataFrame vuoto per i risultati
+    dates = df['date'].unique()
+    hours = sorted(df['hour'].unique())
+    result = pd.DataFrame(index=dates, columns=pd.MultiIndex.from_product([hours, data_cols]))
+
+    # Popola il DataFrame dei risultati
+    for date in dates:
+        for hour in hours:
+            for col in data_cols:
+                value = df.loc[(df['date'] == date) & (df['hour'] == hour), col].values
+                if len(value) > 0:
+                    result.loc[date, (hour, col)] = value[0]
+                else:
+                    result.loc[date, (hour, col)] = None
+                    
+    result=result.reset_index()
+
+    return result
+
+def somma_colonne_per_ora(df, colonne_da_sommare):
+    """
+    Somma le colonne specificate per ogni fascia oraria in un DataFrame con MultiIndex.
+
+    Args:
+        df (pd.DataFrame): Il DataFrame di input con MultiIndex per le colonne.
+        colonne_da_sommare (list): Una lista di stringhe che rappresentano i nomi delle colonne da sommare.
+
+    Returns:
+        pd.DataFrame: Un nuovo DataFrame contenente la somma delle colonne specificate per ogni ora.
+    """
+
+    # Estrai le ore dal MultiIndex
+    ore = df.columns.levels[0]
+
+    # Crea un DataFrame vuoto per i risultati
+    risultati = pd.DataFrame(index=df.index, columns=ore)
+
+    # Calcola la somma per ogni ora
+    for ora in ore:
+        colonne_ora = [(ora, col) for col in colonne_da_sommare]
+        if all(col in df.columns for col in colonne_ora):  # Verifica se tutte le colonne esistono
+            risultati[ora] = df[colonne_ora].sum(axis=1)
+        else:
+            print(f"Attenzione: alcune colonne per l'ora {ora} non esistono.")
+            risultati[ora] = 0  # o pd.NA, a seconda di come vuoi gestire i valori mancanti
+
+    return risultati
 
 def calculate_pv_module_output(latitude, longitude, efficiency, azimuth, slope, module_power=0.5, system_losses=15, save_output="N"):
 
@@ -162,8 +231,65 @@ def process_multiple_pv_configurations(latitude, longitude, efficiency, *triplet
             # Add the "P" column for this configuration to the final DataFrame
             final_df[f"P_{slope}_{azimuth}_{module_power}"] = p_column
     
-    # Return the final DataFrame with results
+    final_df = trasforma_dataframe(final_df)
+    
+    # Return the final Da
     return final_df
+    
+def controlla_e_allinea_dataframe(df1, df2):
+    """
+    Verifica se due DataFrame hanno lo stesso numero di righe e allinea il DataFrame
+    più lungo rimuovendo le righe in eccesso.
+
+    Args:
+        df1 (pd.DataFrame): Il primo DataFrame.
+        df2 (pd.DataFrame): Il secondo DataFrame.
+
+    Returns:
+        tuple: Una tupla contenente i due DataFrame allineati.
+    """
+
+    print("Tail di df1 prima dell'allineamento:")
+    print(df1.tail())
+    print("\nTail di df2 prima dell'allineamento:")
+    print(df2.tail())
+
+    if len(df1) != len(df2):
+        min_len = min(len(df1), len(df2))
+        df1_allineato = df1.iloc[:min_len]
+        df2_allineato = df2.iloc[:min_len]
+
+        print("\nDataFrame allineati. Righe rimosse dal DataFrame più lungo.")
+    else:
+        df1_allineato = df1.copy()
+        df2_allineato = df2.copy()
+        print("\nI DataFrame hanno lo stesso numero di righe. Nessuna rimozione necessaria.")
+
+    print("\nTail di df1 dopo l'allineamento:")
+    print(df1_allineato.tail())
+    print("\nTail di df2 dopo l'allineamento:")
+    print(df2_allineato.tail())
+
+    return df1_allineato, df2_allineato
+
+def sottrai_dataframes(df1, df2):
+    # Assicurati che entrambi i DataFrame abbiano lo stesso indice
+    if not df1.index.equals(df2.index):
+        raise ValueError("I DataFrame devono avere lo stesso indice.")
+    
+    # Separare le colonne numeriche (escludendo gli indici)
+    df1_numeric = df1.drop('index', axis=1, inplace=False)  # Creiamo una copia per lavorare solo sulle colonne numeriche
+    df2_numeric = df2.drop('index', axis=1, inplace=False)  # Creiamo una copia anche qui
+    
+    df1_numeric = df1_numeric.applymap(pd.to_numeric, errors='coerce')
+    df2_numeric = df2_numeric.applymap(pd.to_numeric, errors='coerce')
+
+    # Eseguiamo la sottrazione solo sulle colonne numeriche
+    df_differenza_numeric = df1_numeric - df2_numeric
+
+    return df_differenza_numeric
+
+# ------------------main ------------- 
 
 # Example usage
 latitude = 44.516  # Provided latitude
@@ -184,7 +310,10 @@ PV_power = 0.47  # Peak power in kW (e.g., 300W = 0.3kW)
 # ----------------------
 """
 
-# df = process_multiple_pv_configurations(latitude, longitude, efficiency, *PV_subsets)
+df = process_multiple_pv_configurations(latitude, longitude, efficiency, *PV_subsets)
+
+colonne_da_sommare = ['P_35_23_0.47', 'P_35_-157_0.47', 'P_35_113_0.47']
+df_somma = somma_colonne_per_ora(df, colonne_da_sommare)
 
 """
 # ------- DEBUG ------
@@ -213,4 +342,9 @@ input_directory = ['/home/santa/Documenti/Energia/WIPTFMs/data/ExportData_gennai
 
 consumption_df = process_csv(input_directory)
 
-print(consumption_df)
+df_somma_a, consumption_df_a = controlla_e_allinea_dataframe(df_somma, consumption_df)
+
+
+df_differenza = sottrai_dataframes(df_somma_a, consumption_df_a)
+
+print(df_differenza)
