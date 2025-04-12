@@ -3,24 +3,49 @@ import json
 import pandas as pd
 from datetime import datetime
 
-def merge_csv_files(file_paths):
-    
-   def transform_to_long_format(file_paths):
-    # Create an empty list to hold dataframes
-    dataframes = []
-    
-    # Loop through each file path and read it into a dataframe
+import pandas as pd
+
+def process_csv(file_paths):
+    """
+    Legge una lista di file CSV, li concatena, calcola le somme delle colonne specificate e crea un DataFrame.
+
+    Args:
+        file_paths (list): Una lista di percorsi di file CSV.
+
+    Returns:
+        pandas.DataFrame: Il DataFrame risultante.
+    """
+
+    # Leggi e concatena i file CSV
+    dfs = []
     for file_path in file_paths:
-        # Read the CSV file into a dataframe
-        df = pd.read_csv(file_path, sep=";", decimal=",")
-        
-        # Append the dataframe to the list
-        dataframes.append(df)
-    
-    # Concatenate all dataframes in the list into a single dataframe
-    merged_df = pd.concat(dataframes, ignore_index=True)
-    
-    return merged_df
+        try:
+            df = pd.read_csv(file_path, sep=";", header=0)
+            dfs.append(df)
+        except FileNotFoundError:
+            print(f"File non trovato: {file_path}")
+            return None
+
+    if not dfs:
+        print("Nessun file valido trovato.")
+        return None
+
+    combined_df = pd.concat(dfs, ignore_index=False)
+    combined_df = combined_df.reset_index(drop=False)
+
+    # Crea un nuovo DataFrame con la prima colonna
+    new_df = pd.DataFrame(combined_df.iloc[:, 0].copy())
+
+    # Itera sulle colonne per calcolare le somme e aggiungerle al nuovo DataFrame
+    for i in range(1, len(combined_df.columns) - 3, 4):
+        col_name = f"{combined_df.columns[i+1][:5]}-{combined_df.columns[i+4][-5:]}"
+        new_df[col_name] = combined_df.iloc[:, i:i+4].apply(lambda row: sum(map(lambda x: float(str(x).replace(",", ".")), row)), axis=1)
+
+    # new_df = new_df.drop('Giorno', axis=1)
+
+    return new_df
+
+
 
 def calculate_pv_module_output(latitude, longitude, efficiency, azimuth, slope, module_power=0.5, system_losses=15, save_output="N"):
 
@@ -159,7 +184,7 @@ PV_power = 0.47  # Peak power in kW (e.g., 300W = 0.3kW)
 # ----------------------
 """
 
-df = process_multiple_pv_configurations(latitude, longitude, efficiency, *PV_subsets)
+# df = process_multiple_pv_configurations(latitude, longitude, efficiency, *PV_subsets)
 
 """
 # ------- DEBUG ------
@@ -169,6 +194,9 @@ else:
     print("Returned value is not a DataFrame.")
 # ----------------------
 """
+
+# input_directory = '/home/santa/Documenti/Energia/WIPTFMs/data/ExportData_gennaio.csv'
+
 
 input_directory = ['/home/santa/Documenti/Energia/WIPTFMs/data/ExportData_gennaio.csv',
                '/home/santa/Documenti/Energia/WIPTFMs/data/ExportData_febbraio.csv',
@@ -183,6 +211,6 @@ input_directory = ['/home/santa/Documenti/Energia/WIPTFMs/data/ExportData_gennai
                '/home/santa/Documenti/Energia/WIPTFMs/data/ExportData_novembre.csv',
                '/home/santa/Documenti/Energia/WIPTFMs/data/ExportData_dicembre.csv']
 
-consumption_df = merge_csv_files(input_directory)
+consumption_df = process_csv(input_directory)
 
 print(consumption_df)
