@@ -2,8 +2,8 @@ import requests
 import json
 import pandas as pd
 from datetime import datetime
-
-import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 def process_csv(file_paths):
     """
@@ -222,7 +222,7 @@ def process_multiple_pv_configurations(latitude, longitude, efficiency, *triplet
         
         if df is not None:
             # Extract the "P" column from the returned DataFrame
-            p_column = df["P"]
+            p_column = df["P"]/1000
             
             # If final_df is empty, initialize it with the "time" column from the first configuration
             if final_df.empty:
@@ -289,6 +289,28 @@ def sottrai_dataframes(df1, df2):
 
     return df_differenza_numeric
 
+def plot_heatmap(df):
+    """
+    Funzione per generare una heatmap da un DataFrame.
+    
+    Parametri:
+    df : pandas.DataFrame
+        Il DataFrame con i dati numerici da visualizzare.
+    """
+    # Impostare la dimensione della figura
+    plt.figure(figsize=(10, 8))
+    
+    # Creare la heatmap con una scala di colori personalizzata
+    sns.heatmap(df, cmap='coolwarm', annot=False, fmt='.2f', cbar=True, vmin=-6, vmax=6)
+    
+    # Aggiungere etichette e titolo
+    plt.title('Heatmap del DataFrame')
+    plt.xlabel('Colonne')
+    plt.ylabel('Indici temporali')
+    
+    # Mostrare la heatmap
+    plt.show()
+
 # ------------------main ------------- 
 
 # Example usage
@@ -346,5 +368,7 @@ df_somma_a, consumption_df_a = controlla_e_allinea_dataframe(df_somma, consumpti
 
 
 df_differenza = sottrai_dataframes(df_somma_a, consumption_df_a)
+df_differenza['index'] = consumption_df_a['index']
+df_differenza=df_differenza.set_index('index')
 
-print(df_differenza)
+plot_heatmap(df_differenza)
