@@ -4,6 +4,7 @@ import pandas as pd
 from datetime import datetime
 import seaborn as sns
 import matplotlib.pyplot as plt
+import numpy as np
 
 def process_csv(file_paths):
     """
@@ -112,7 +113,7 @@ def somma_colonne_per_ora(df, colonne_da_sommare):
             risultati[ora] = df[colonne_ora].sum(axis=1)
         else:
             print(f"Attenzione: alcune colonne per l'ora {ora} non esistono.")
-            risultati[ora] = 0  # o pd.NA, a seconda di come vuoi gestire i valori mancanti
+            risultati[ora] = pd.NA  # o pd.NA, a seconda di come vuoi gestire i valori mancanti
 
     return risultati
 
@@ -236,7 +237,7 @@ def process_multiple_pv_configurations(latitude, longitude, efficiency, *triplet
     # Return the final Da
     return final_df
     
-def controlla_e_allinea_dataframe(df1, df2):
+def controlla_e_allinea_dataframe(df1, df2, V=False):
     """
     Verifica se due DataFrame hanno lo stesso numero di righe e allinea il DataFrame
     più lungo rimuovendo le righe in eccesso.
@@ -244,31 +245,36 @@ def controlla_e_allinea_dataframe(df1, df2):
     Args:
         df1 (pd.DataFrame): Il primo DataFrame.
         df2 (pd.DataFrame): Il secondo DataFrame.
+        V (bool, optional): Se True, stampa a terminale. Default è False.
 
     Returns:
         tuple: Una tupla contenente i due DataFrame allineati.
     """
 
-    print("Tail di df1 prima dell'allineamento:")
-    print(df1.tail())
-    print("\nTail di df2 prima dell'allineamento:")
-    print(df2.tail())
+    if V:
+        print("Tail di df1 prima dell'allineamento:")
+        print(df1.tail())
+        print("\nTail di df2 prima dell'allineamento:")
+        print(df2.tail())
 
     if len(df1) != len(df2):
         min_len = min(len(df1), len(df2))
         df1_allineato = df1.iloc[:min_len]
         df2_allineato = df2.iloc[:min_len]
 
-        print("\nDataFrame allineati. Righe rimosse dal DataFrame più lungo.")
+        if V:
+            print("\nDataFrame allineati. Righe rimosse dal DataFrame più lungo.")
     else:
         df1_allineato = df1.copy()
         df2_allineato = df2.copy()
-        print("\nI DataFrame hanno lo stesso numero di righe. Nessuna rimozione necessaria.")
+        if V:
+            print("\nI DataFrame hanno lo stesso numero di righe. Nessuna rimozione necessaria.")
 
-    print("\nTail di df1 dopo l'allineamento:")
-    print(df1_allineato.tail())
-    print("\nTail di df2 dopo l'allineamento:")
-    print(df2_allineato.tail())
+    if V:
+        print("\nTail di df1 dopo l'allineamento:")
+        print(df1_allineato.tail())
+        print("\nTail di df2 dopo l'allineamento:")
+        print(df2_allineato.tail())
 
     return df1_allineato, df2_allineato
 
@@ -281,8 +287,8 @@ def sottrai_dataframes(df1, df2):
     df1_numeric = df1.drop('index', axis=1, inplace=False)  # Creiamo una copia per lavorare solo sulle colonne numeriche
     df2_numeric = df2.drop('index', axis=1, inplace=False)  # Creiamo una copia anche qui
     
-    df1_numeric = df1_numeric.applymap(pd.to_numeric, errors='coerce')
-    df2_numeric = df2_numeric.applymap(pd.to_numeric, errors='coerce')
+    df1_numeric = df1_numeric.map(lambda x: pd.to_numeric(x, errors='coerce'))
+    df2_numeric = df2_numeric.map(lambda x: pd.to_numeric(x, errors='coerce'))
 
     # Eseguiamo la sottrazione solo sulle colonne numeriche
     df_differenza_numeric = df1_numeric - df2_numeric
@@ -311,17 +317,108 @@ def plot_heatmap(df):
     # Mostrare la heatmap
     plt.show()
 
+def calcola_risparmio(df_differenza, df_somma, df_consumo, c_EE):
+    """
+    Calcola il DataFrame df_risparmio.
+
+    Args:
+        df_differenza (pd.DataFrame): DataFrame con le differenze.
+        df_somma (pd.DataFrame): DataFrame con le somme.
+        df_consumo (pd.DataFrame): DataFrame con i consumi.
+        c_EE (float): Parametro di moltiplicazione.
+
+    Returns:
+        pd.DataFrame: DataFrame df_risparmio.
+    """
+
+    # Crea una copia di df_differenza per evitare modifiche all'originale
+    df_differenza_modificato = df_differenza.copy()
+
+    # print(df_differenza_modificato)
+
+    # Imposta l'indice di riga di df_risparmio
+    df_risparmio = pd.DataFrame(index=df_differenza_modificato['index'])
+
+    # Rimuovi la colonna 'index' da df_differenza_modificato
+    df_differenza_modificato = df_differenza_modificato.drop(columns=['index'])
+
+    # Imposta i valori maggiori di 0 a 0 in df_differenza_modificato
+    df_differenza_modificato[df_differenza_modificato > 0] = 0
+
+    # Somma df_differenza_modificato e df_consumo membro a membro
+    df_risparmio = df_differenza_modificato + df_consumo
+
+    # Moltiplica tutti i valori per c_EE
+    df_risparmio = df_risparmio * c_EE
+
+    # Calcola la somma di tutti i valori
+    somma_risparmio = df_risparmio.values.sum()
+
+    return somma_risparmio
+
+import pandas as pd
+
+def calcola_imm_prel(df):
+
+    # Calcola la somma dei valori positivi per riga
+    imm = df[df > 0].fillna(0).sum(axis=1)
+
+    # Calcola la somma dei valori negativi per riga
+    prel = df[df < 0].fillna(0).sum(axis=1)
+
+    # Costruisce il nuovo dataframe con le colonne richieste
+    risultato = pd.DataFrame({
+        'index': df.index,  # usa l'indice, non df['index']
+        'imm': imm,
+        'prel': prel
+    })
+
+    return risultato
+
+def grafica_statistiche(df_stat):
+    fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(14, 8), sharex=True)
+
+    colonne = ['imm', 'prel']
+
+    for i, colonna in enumerate(colonne):
+        media = df_stat[colonna].mean()
+        std = df_stat[colonna].std()
+        ax = axes[i]
+
+        ax.bar(df_stat['index'], df_stat[colonna], color='skyblue', label=colonna)
+
+        # Linee tratteggiate
+        ax.axhline(media, color='red', linestyle='--', label='Media')
+        ax.axhline(media + std, color='orange', linestyle='--', label='Media ± 1σ')
+        ax.axhline(media - std, color='orange', linestyle='--')
+        ax.axhline(media + 2*std, color='green', linestyle='--', label='Media ± 2σ')
+        ax.axhline(media - 2*std, color='green', linestyle='--')
+
+        ax.set_title(f"{colonna.upper()} - Valori con Media e Deviazioni Standard")
+        ax.set_ylabel(colonna)
+        ax.legend()
+
+    # Migliora la leggibilità delle date sull'asse x
+    xticks = np.arange(0, len(df_stat['index']), max(1, len(df_stat) // 20))  # mostra ~20 date
+    xticklabels = df_stat['index'].iloc[xticks]
+    axes[-1].set_xticks(xticks)
+    axes[-1].set_xticklabels(xticklabels, rotation=45, ha='right')
+
+    axes[-1].set_xlabel("Data")
+    plt.tight_layout()
+    plt.show()
 # ------------------main ------------- 
 
 # Example usage
 latitude = 44.516  # Provided latitude
 longitude = 11.518  # Provided longitude
 efficiency = 0.23  # 23% efficiency
+c_EE = 0,15 # €/kWh electric energy cost
 
 PV_subsets = [
-    (35, 23, 0.47),  # Slope, Azimuth, PV Power
-    (35, -157, 0.47),  # Slope, Azimuth, PV Power
-    (35, 113, 0.47)   # Slope, Azimuth, PV Power
+    (35, 23, 4.95),  # Slope, Azimuth, PV Power
+    (35, -157, 1.8),  # Slope, Azimuth, PV Power
+    (35, 113, 1.35)   # Slope, Azimuth, PV Power
 ]
 
 """
@@ -334,7 +431,11 @@ PV_power = 0.47  # Peak power in kW (e.g., 300W = 0.3kW)
 
 df = process_multiple_pv_configurations(latitude, longitude, efficiency, *PV_subsets)
 
-colonne_da_sommare = ['P_35_23_0.47', 'P_35_-157_0.47', 'P_35_113_0.47']
+second_level_names = [col[1] for col in df.columns if col[1] != '']
+
+colonne_da_sommare = list(set(second_level_names))
+# print(colonne_da_sommare)
+
 df_somma = somma_colonne_per_ora(df, colonne_da_sommare)
 
 """
@@ -368,7 +469,21 @@ df_somma_a, consumption_df_a = controlla_e_allinea_dataframe(df_somma, consumpti
 
 
 df_differenza = sottrai_dataframes(df_somma_a, consumption_df_a)
+
 df_differenza['index'] = consumption_df_a['index']
 df_differenza=df_differenza.set_index('index')
+print(df_differenza)
+# df_differenza.to_csv('differenza.csv')
+# df_somma_a.to_csv('somma.csv')
+# consumption_df_a.to_csv('consumption.csv')
 
 plot_heatmap(df_differenza)
+
+# risparmio = calcola_risparmio(df_differenza, df_somma_a, consumption_df_a, c_EE)
+
+# print(risparmio)
+
+df_diff_daily = calcola_imm_prel(df_differenza)
+df_diff_daily.to_csv('df_diff_daily.csv')
+
+grafica_statistiche(df_diff_daily)
