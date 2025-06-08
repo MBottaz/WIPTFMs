@@ -195,21 +195,21 @@ else:
 # ----------------------
 """
 
-# input_directory = '/home/santa/Documenti/Energia/WIPTFMs/data/ExportData_gennaio.csv'
+# input_directory = '/home/santa/Documenti/Energia/WIPTFMs/input/ExportData_gennaio.csv'
 
 
-input_directory = ['/home/santa/Documenti/Energia/WIPTFMs/data/ExportData_gennaio.csv',
-               '/home/santa/Documenti/Energia/WIPTFMs/data/ExportData_febbraio.csv',
-               '/home/santa/Documenti/Energia/WIPTFMs/data/ExportData_marzo.csv',
-               '/home/santa/Documenti/Energia/WIPTFMs/data/ExportData_aprile.csv',
-               '/home/santa/Documenti/Energia/WIPTFMs/data/ExportData_maggio.csv',
-               '/home/santa/Documenti/Energia/WIPTFMs/data/ExportData_giugno.csv',
-               '/home/santa/Documenti/Energia/WIPTFMs/data/ExportData_luglio.csv',
-               '/home/santa/Documenti/Energia/WIPTFMs/data/ExportData_agosto.csv',
-               '/home/santa/Documenti/Energia/WIPTFMs/data/ExportData_settembre.csv',
-               '/home/santa/Documenti/Energia/WIPTFMs/data/ExportData_ottobre.csv',
-               '/home/santa/Documenti/Energia/WIPTFMs/data/ExportData_novembre.csv',
-               '/home/santa/Documenti/Energia/WIPTFMs/data/ExportData_dicembre.csv']
+input_directory = ['/home/santa/Documenti/Energia/WIPTFMs/input/ExportData_gennaio.csv',
+               '/home/santa/Documenti/Energia/WIPTFMs/input/ExportData_febbraio.csv',
+               '/home/santa/Documenti/Energia/WIPTFMs/input/ExportData_marzo.csv',
+               '/home/santa/Documenti/Energia/WIPTFMs/input/ExportData_aprile.csv',
+               '/home/santa/Documenti/Energia/WIPTFMs/input/ExportData_maggio.csv',
+               '/home/santa/Documenti/Energia/WIPTFMs/input/ExportData_giugno.csv',
+               '/home/santa/Documenti/Energia/WIPTFMs/input/ExportData_luglio.csv',
+               '/home/santa/Documenti/Energia/WIPTFMs/input/ExportData_agosto.csv',
+               '/home/santa/Documenti/Energia/WIPTFMs/input/ExportData_settembre.csv',
+               '/home/santa/Documenti/Energia/WIPTFMs/input/ExportData_ottobre.csv',
+               '/home/santa/Documenti/Energia/WIPTFMs/input/ExportData_novembre.csv',
+               '/home/santa/Documenti/Energia/WIPTFMs/input/ExportData_dicembre.csv']
 
 consumption_df = process_csv(input_directory)
 
