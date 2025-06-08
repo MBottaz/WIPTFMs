@@ -1,64 +1,39 @@
-from llama_index.core import SimpleDirectoryReader, VectorStoreIndex
-from llama_index.core import Settings
+
 import gradio as gr
-import requests
-import os
-from dotenv import load_dotenv
+from langchain.agents import initialize_agent, Tool
+from langchain.agents.agent_types import AgentType
+from langchain.llms import HuggingFaceHub
+from tools.calculate_pv_output import calculate_pv_output
 
-# Carica variabili ambiente
-load_dotenv()
+# LLM economico (es. HuggingFaceHub, oppure sostituisci con OpenAI se necessario)
+llm = HuggingFaceHub(
+    repo_id="mistralai/Mistral-7B-Instruct-v0.1",  # sostituibile con un modello locale/HF
+    model_kwargs={"temperature": 0.1, "max_new_tokens": 512}
+)
 
-# Classe semplice per API HuggingFace
-class HuggingFaceAPI:
-    def __init__(self):
-        self.api_key = os.getenv('HUGGINGFACE_API_KEY')
-        self.model = "microsoft/Phi-3-mini-4k-instruct"
-        self.headers = {"Authorization": f"Bearer {self.api_key}"}
-    
-    def complete(self, prompt):
-        payload = {
-            "inputs": prompt,
-            "parameters": {"max_new_tokens": 512, "temperature": 0.1}
-        }
-        
-        response = requests.post(
-            f"https://api-inference.huggingface.co/models/{self.model}",
-            headers=self.headers,
-            json=payload
-        )
-        
-        if response.status_code == 200:
-            result = response.json()
-            if isinstance(result, list) and len(result) > 0:
-                return result[0].get('generated_text', '')
-            return str(result)
-        else:
-            return f"Errore API: {response.status_code}"
+# Tool: calcolo PV
+tools = [
+    Tool(
+        name="CalcoloProduzioneFotovoltaica",
+        func=calculate_pv_output,
+        description="Usa questo tool per stimare la produzione energetica da un impianto fotovoltaico. Richiede: latitudine, longitudine, efficienza, azimut, inclinazione, potenza modulo, perdite e anno."
+    )
+]
 
-# Configura LLM tramite API HuggingFace invece che locale
-llm = HuggingFaceAPI()
+# Agente
+agent = initialize_agent(
+    tools,
+    llm,
+    agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+    verbose=True
+)
 
-# 1. Caricamento documenti dalla cartella dedicata
-documents = SimpleDirectoryReader("./docs").load_data()
-
-# 2. Usa embeddings di default (leggeri) invece di Phi-3-mini locale
-Settings.llm = llm
-
-# 3. Costruzione dell'indice e query engine
-index = VectorStoreIndex.from_documents(documents)
-query_engine = index.as_query_engine()
-
-# 4. Funzione per rispondere alle domande (identica alla tua)
-def ask_pdf(question):
-    response = query_engine.query(question)
-    return str(response)
-
-# 5. Interfaccia Gradio (identica alla tua)
+# Interfaccia Gradio
 demo = gr.Interface(
-    fn=ask_pdf,
-    inputs=gr.Textbox(label="Fai una domanda sul PDF ABB"),
+    fn=lambda message: agent.run(message),
+    inputs=gr.Textbox(label="Scrivi la tua richiesta (es. calcola la produzione a Roma, inclinazione 30°, azimut 0°)"),
     outputs="text",
-    title="Consulente Fotovoltaico (PDF ABB) - Phi-3 API"
+    title="Agente Calcolo Produzione Fotovoltaica"
 )
 
 if __name__ == "__main__":
