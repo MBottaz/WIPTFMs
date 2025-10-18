@@ -1,5 +1,6 @@
 import requests
 import json
+import pandas as pd
 
 def calculate_pv_module_output(latitude, longitude, efficiency, azimuth, slope, module_power=0.5, system_losses=15, save_output="N"):
 
