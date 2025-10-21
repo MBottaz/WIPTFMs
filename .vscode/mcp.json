@@ -1,0 +1,13 @@
+{
+	"servers": {
+		"csv-mcp": {
+			"type": "stdio",
+			"command": "python",
+			"args": [
+                "CSV_Server.py"
+            ]
+		}
+    
+	},
+	"inputs": []
+}
