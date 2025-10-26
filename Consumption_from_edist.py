@@ -10,7 +10,7 @@ def load_csv(folder):
 
     """
     try:
-        filepaths = [os.path.join(folder, f) for f in os.listdir('data') if f.endswith('.csv')]
+        filepaths = [os.path.join(folder, f) for f in os.listdir(folder) if f.endswith('.csv')]
         df = pd.concat(map(lambda f: pd.read_csv(f, sep=';', index_col=False, decimal=','), filepaths), ignore_index=True)
     except FileNotFoundError:
         print(f"File non trovato: {folder}")
@@ -73,9 +73,17 @@ def extract_start_time(interval_str):
     return interval_str
 
 
+def create_output_file(input_directory='input', output_directory='data'):
+
+    consumption_df = load_csv(input_directory)
+    consumption_df = reprocess_csv_edistribuzione(consumption_df)
+
+    consumption_df.to_csv(output_directory+'/output.csv', index=False)
+
+    return None
 
 
-input_directory = 'data'
+if __name__ == "__main__":
 
-consumption_df = load_csv(input_directory)
-consumption_df = reprocess_csv_edistribuzione(consumption_df)
+    create_output_file('input', 'data')
+    
