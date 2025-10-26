@@ -4,12 +4,11 @@
 			"type": "stdio",
 			"command": "python",
 			"args": [
-                "CSV_Server.py",
+				"CSV_Server.py",
 				"/home/santa/Documenti/Energia/WIPTFMs/input",
 				"/home/santa/Documenti/Energia/WIPTFMs/data"
-            ]
+			]
 		}
-    
 	},
 	"inputs": []
 }
