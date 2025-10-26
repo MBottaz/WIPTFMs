@@ -64,16 +64,32 @@ def read_csv(file_path: str) -> str:
 @mcp.tool()
 def aggregate_csv(input_file_folder: str) -> str:
     """
-    Aggregates a CSV file based on specified groupings and aggregation functions.
+    Aggregates and reprocesses CSV data from e-distribuzione format.
     
-    Use when: analyzing data files, checking CSV structure, or viewing data samples.
-    Examples: 'read sales.csv', 'analyze the data file', 'show me what's in the CSV'
+    This tool loads a CSV file, applies e-distribuzione-specific transformations,
+    and saves the processed output to 'data/output.csv'. It returns a preview
+    of the results including the first and last 5 rows.
     
     Args:
-        input_file_folder: Path to the folder containing the CSV file to read. Can be absolute or relative.
+        input_file_folder: Folder containing the CSV input file.
+                           Should point to a valid e-distribuzione formatted CSV file.
     
     Returns:
-        String containing file info and preview of the data.
+        A string containing:
+        - Success/error message
+        - Preview of first 5 rows (if successful)
+        - Preview of last 5 rows (if successful)
+    
+    Output:
+        - Writes processed CSV to: data/output.csv
+        - Output file will overwrite existing file if present
+    
+    Example:
+        aggregate_csv("input")
+    
+    Note:
+        This tool is specifically designed for e-distribuzione CSV format.
+        Using it with other CSV formats may produce unexpected results.
     """
     
     output_file_folder = 'data'
