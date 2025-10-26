@@ -15,6 +15,8 @@ from pathlib import Path
 # FastMCP for simplified MCP server creation
 from fastmcp import FastMCP
 
+from Consumption_preparation import load_csv, reprocess_csv_edistribuzione
+
 # Create a new FastMCP server instance
 mcp = FastMCP("csv-reader-server")
 
@@ -57,6 +59,44 @@ def read_csv(file_path: str) -> str:
         
     except Exception as e:
         return f"Error reading CSV: {str(e)}"
+    
+
+@mcp.tool()
+def aggregate_csv(input_file_folder: str) -> str:
+    """
+    Aggregates a CSV file based on specified groupings and aggregation functions.
+    
+    Use when: analyzing data files, checking CSV structure, or viewing data samples.
+    Examples: 'read sales.csv', 'analyze the data file', 'show me what's in the CSV'
+    
+    Args:
+        input_file_folder: Path to the folder containing the CSV file to read. Can be absolute or relative.
+    
+    Returns:
+        String containing file info and preview of the data.
+    """
+    
+    output_file_folder = 'data'
+
+    try:
+        df = load_csv(input_file_folder)
+        df = reprocess_csv_edistribuzione(df)
+
+        df.to_csv(output_file_folder+'/output.csv', index=False)
+
+        result = "Successfully aggregated CSV, saved in: {output_file_folder}\n"
+
+        # Add first 5 rows as preview
+        result += "First 5 rows:\n"
+        result += df.head().to_string()
+
+        result += "Last 5 rows:\n"
+        result += df.tail().to_string()
+
+        return result
+
+    except Exception as e:
+        return f"Error processing CSV: {str(e)}"
     
     
 # Run the server when script is executed directly
