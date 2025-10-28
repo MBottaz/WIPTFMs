@@ -5,8 +5,8 @@
 			"command": "python",
 			"args": [
 				"CSV_Server.py",
-				"/home/santa/Documenti/Energia/WIPTFMs/input",
-				"/home/santa/Documenti/Energia/WIPTFMs/data"
+				"F:/Documenti/Progetti/PVsim/WIPTFMs/input",
+				"F:/Documenti/Progetti/PVsim/WIPTFMs/data"
 			]
 		}
 	},

@@ -14,8 +14,11 @@ import pandas as pd
 from pathlib import Path
 # FastMCP for simplified MCP server creation
 from fastmcp import FastMCP
+# Asynchronous support
+import asyncio
 
 from Consumption_preparation import load_csv, reprocess_csv_edistribuzione
+from PV_sim import calculate_pv_module_output
 
 # Create a new FastMCP server instance
 mcp = FastMCP("csv-reader-server")
@@ -113,7 +116,42 @@ def aggregate_csv(input_file_folder: str) -> str:
 
     except Exception as e:
         return f"Error processing CSV: {str(e)}"
+
+@mcp.tool()
+def calculate_pv_output(latitude: float, longitude: float, efficiency: float, slope: float, azimuth: float, module_power: float) -> str:
+    """
+    Calculate PV module output for a given configuration and return a DataFrame preview.
     
+    Parameters:
+    - latitude (float): Latitude of the location
+    - longitude (float): Longitude of the location
+    - efficiency (float): Efficiency of the system (0 to 1), you can assume 0.23 which is the average efficiency of state of the art PV modules
+    - slope (float): Slope angle of the PV module, (choose one between 15 degrees for low-tilt roofs, and 30 degrees for optimal tilt installation)
+    - azimuth (float): Azimuth angle of the PV module (0° = south, 90° = west, 180° = north, 270° = east, it can be also values in between)
+    - module_power (float): Peak power of the PV module in kW (e.g., 0.3 for 300W). Perform the calculation for a single module.
+    
+    Returns:
+    - str: Preview of the resulting DataFrame with timestamp and "P" values.
+    """
+    
+    df = calculate_pv_module_output(latitude, longitude, efficiency, azimuth, slope, module_power)
+    
+    if df is not None:
+        result = f"PV Output Calculation Result:\n"
+        result += f"Shape: {df.shape[0]} rows × {df.shape[1]} columns\n"
+        result += f"Columns: {', '.join(df.columns)}\n\n"
+        
+        # Add first 5 rows as preview
+        result += "First 5 rows:\n"
+        result += df.head().to_string()
+
+        result += "\nLast 5 rows:\n"
+        result += df.tail().to_string()
+        
+        return result
+    else:
+        return "Error calculating PV output."   
+
     
 # Run the server when script is executed directly
 if __name__ == "__main__":

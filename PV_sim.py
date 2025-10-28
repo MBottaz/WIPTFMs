@@ -120,23 +120,25 @@ def process_multiple_pv_configurations(latitude, longitude, efficiency, *triplet
     # Return the final DataFrame with results
     return final_df
 
-# Example usage
-latitude = 44.516  # Provided latitude
-longitude = 11.518  # Provided longitude
-efficiency = 0.23  # 23% efficiency
+if __name__ == "__main__":
 
-PV_subsets = [
-    (35, 23, 0.47),  # Slope, Azimuth, PV Power
-    (35, -157, 0.47),  # Slope, Azimuth, PV Power
-    (35, 113, 0.47)   # Slope, Azimuth, PV Power
-]
+    # Example usage
+    latitude = 44.516  # Provided latitude
+    longitude = 11.518  # Provided longitude
+    efficiency = 0.23  # 23% efficiency
 
-"""
-# ------- DEBUG ------
-azimuth = 23  # azimuth angle in degrees (0 = South, 90 = West, -90 = East, 180 = North)
-slope = 35  # 35 degree tilt
-PV_power = 0.47  # Peak power in kW (e.g., 300W = 0.3kW)
-# ----------------------
-"""
+    PV_subsets = [
+        (35, 23, 0.47),  # Slope, Azimuth, PV Power
+        (35, -157, 0.47),  # Slope, Azimuth, PV Power
+        (35, 113, 0.47)   # Slope, Azimuth, PV Power
+    ]
 
-# df = process_multiple_pv_configurations(latitude, longitude, efficiency, *PV_subsets)
+    """
+    # ------- DEBUG ------
+    azimuth = 23  # azimuth angle in degrees (0 = South, 90 = West, -90 = East, 180 = North)
+    slope = 35  # 35 degree tilt
+    PV_power = 0.47  # Peak power in kW (e.g., 300W = 0.3kW)
+    # ----------------------
+    """
+
+    # df = process_multiple_pv_configurations(latitude, longitude, efficiency, *PV_subsets)
