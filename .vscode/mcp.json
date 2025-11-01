@@ -1,0 +1,14 @@
+{
+	"servers": {
+		"csv-mcp": {
+			"type": "stdio",
+			"command": "python",
+			"args": [
+				"CSV_Server.py",
+				"F:/Documenti/Progetti/PVsim/WIPTFMs/input",
+				"F:/Documenti/Progetti/PVsim/WIPTFMs/data"
+			]
+		}
+	},
+	"inputs": []
+}
