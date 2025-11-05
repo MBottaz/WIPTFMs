@@ -118,7 +118,7 @@ def aggregate_csv(input_file_folder: str) -> str:
         return f"Error processing CSV: {str(e)}"
 
 @mcp.tool()
-def calculate_pv_output(latitude: float, longitude: float, efficiency: float, slope: float, azimuth: float, module_power: float) -> str:
+async def calculate_pv_output(latitude: float, longitude: float, efficiency: float, slope: float, azimuth: float, module_power: float) -> str:
     """
     Calculate PV module output for a given configuration and return a DataFrame preview.
     
@@ -134,7 +134,7 @@ def calculate_pv_output(latitude: float, longitude: float, efficiency: float, sl
     - str: Preview of the resulting DataFrame with timestamp and "P" values.
     """
     
-    df = calculate_pv_module_output(latitude, longitude, efficiency, azimuth, slope, module_power)
+    df = await calculate_pv_module_output(latitude, longitude, efficiency, azimuth, slope, module_power)
     
     if df is not None:
         result = f"PV Output Calculation Result:\n"
