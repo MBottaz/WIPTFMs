@@ -2,6 +2,9 @@ import os
 import pandas as pd
 from datetime import datetime
 import re
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy import stats
 
 
 def load_csv(folder):
@@ -82,8 +85,72 @@ def create_output_file(input_directory='input', output_directory='data'):
 
     return None
 
+def plot_gaussian_curve(data, label="Data", bins=20, figsize=(10, 6)):
+    """
+    Plots a histogram of the data with a fitted Gaussian curve overlay.
+    
+    Parameters:
+    -----------
+    data : array-like
+        The data column to analyze (pandas Series, numpy array, or list)
+    label : str
+        Label for the plot title and legend
+    bins : int
+        Number of bins for the histogram
+    figsize : tuple
+        Figure size (width, height)
+    
+    Returns:
+    --------
+    dict : Contains fitted parameters (mean, std) and statistics
+    """
+    # Remove NaN values
+    clean_data = np.array(data)
+    clean_data = clean_data[~np.isnan(clean_data)]
+    
+    # Calculate statistics
+    mean = np.mean(clean_data)
+    std = np.std(clean_data)
+    
+    # Create figure
+    plt.figure(figsize=figsize)
+    
+    # Plot histogram
+    n, bins_edges, patches = plt.hist(clean_data, bins=bins, density=True, 
+                                       alpha=0.7, color='skyblue', 
+                                       edgecolor='black', label='Data distribution')
+    
+    # Generate Gaussian curve
+    x = np.linspace(clean_data.min(), clean_data.max(), 1000)
+    gaussian = stats.norm.pdf(x, mean, std)
+    
+    # Plot Gaussian curve
+    plt.plot(x, gaussian, 'r-', linewidth=2, label=f'Gaussian fit\nμ={mean:.2f}, σ={std:.2f}')
+    
+    # Formatting
+    plt.xlabel(label, fontsize=12)
+    plt.ylabel('Probability Density', fontsize=12)
+    plt.title(f'Gaussian Distribution - {label}', fontsize=14, fontweight='bold')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.show()
+    
+    # Return statistics
+    return {
+        'mean': mean,
+        'std': std,
+        'n_samples': len(clean_data),
+        'min': clean_data.min(),
+        'max': clean_data.max()
+    }
+
 
 if __name__ == "__main__":
 
-    create_output_file('input', 'data')
+    df = load_csv('input')
+    df = reprocess_csv_edistribuzione(df)
+    df_daily = df.set_index('timestamp').resample('D').sum()
+    print(df_daily.head())
+    statistics = plot_gaussian_curve(df_daily['consumption'], label="Consumption (kWh)")
     

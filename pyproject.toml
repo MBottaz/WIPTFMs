@@ -7,7 +7,10 @@ requires-python = ">=3.13"
 dependencies = [
     "datetime>=5.5",
     "fastmcp>=2.13.0.2",
+    "matplotlib>=3.10.8",
+    "numpy>=2.3.4",
     "pandas>=2.3.3",
     "pathlib>=1.0.1",
     "requests>=2.32.5",
+    "scipy>=1.17.0",
 ]
