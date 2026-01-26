@@ -2,17 +2,17 @@ import requests
 import json
 import pandas as pd
 
-async def calculate_pv_module_output(latitude, longitude, efficiency, azimuth, slope, module_power=0.5, system_losses=15, save_output="N"):
+async def calculate_pv_module_output(latitude, longitude, azimuth, slope, module_power=1, efficiency=0.25, system_losses=15, save_output="N"):
 
     # Parameters:
-    # latitude (float): Latitude of the location (degrees)
-    # longitude (float): Longitude of the location (degrees)
-    # efficiency (float): Efficiency of the PV system after losses (percentage between 0 and 1)
+    # latitude (float): Latitude of the location (degrees) 
+    # longitude (float): Longitude of the location (degrees) 
     # azimuth (float): Azimuth angle of the panels in degrees (0° = south, 90° = west, 180° = north, 270° = east)
     # slope (float): Tilt angle of the panels in degrees (0° = horizontal, 90° = vertical)
-    # module_power (float): Rated power of the PV module in kW (default is 0.5 kW)
-    # system_losses (float): Total system losses as a percentage (default is 15%)
-    # save_output (str): Option to save output as JSON ("Y" for yes, "N" for no, default is "N")
+    # module_power (float): Rated power of the PV module in kW (optional, default is 1 kW)
+    # efficiency (float): Efficiency of the PV system after losses (between 0 and 1) (optional, default is 0.25)
+    # system_losses (float): Total system losses as a percentage (optional, default is 15%)
+    # save_output (str): Option to save output as JSON (optional, "Y" for yes, "N" for no, default is "N")
 
     # The output DataFrame contains the following columns:
     # 1. time: Timestamp of the data point (format: YYYYMMDD:HHMM)
