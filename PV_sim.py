@@ -2,6 +2,8 @@ import requests
 import json
 import pandas as pd
 
+from Consumption_preparation import plot_gaussian_curve, load_csv, reprocess_csv_edistribuzione
+
 def calculate_pv_module_output(latitude, longitude, efficiency, azimuth, slope, module_power=0.5, system_losses=15, save_output="N"):
 
     # Parameters:
@@ -58,7 +60,7 @@ def calculate_pv_module_output(latitude, longitude, efficiency, azimuth, slope, 
             timeseries = data["outputs"]["hourly"]
             df = pd.DataFrame(timeseries)
             # Convert time from string to datetime format for easier manipulation
-            df["time"] = pd.to_datetime(df["time"], format="%Y%m%d:%H%M")
+            df["datetime"] = pd.to_datetime(df["time"], format="%Y%m%d:%H%M")
 
             # Optionally save the JSON response to a local file
             if save_output.upper() == "Y":
@@ -83,42 +85,28 @@ def calculate_pv_module_output(latitude, longitude, efficiency, azimuth, slope, 
             print(f"Error: {response.text}")
         
         return None
-
-def process_multiple_pv_configurations(latitude, longitude, efficiency, *triplets):
+    
+def add_pv_est(df, pv_df):
     """
-    Calculate PV module outputs for multiple configurations and return a DataFrame.
+    Add PV production data to consumption dataframe.
     
     Parameters:
-    - latitude (float): Latitude of the location
-    - longitude (float): Longitude of the location
-    - efficiency (float): Efficiency of the system (0 to 1)
-    - *triplets: Each triplet represents (slope, azimuth, PV power) for different configurations.
-    
-    Returns:
-    - pd.DataFrame: DataFrame containing timestamp and "P" values for each configuration.
-    """
-    
-    # Initialize an empty DataFrame to store the results
-    final_df = pd.DataFrame()
-    
-    # Loop over each triplet of (slope, azimuth, module_power)
-    for slope, azimuth, module_power in triplets:
-        # Call the calculate_pv_module_output function for the current configuration
-        df = calculate_pv_module_output(latitude, longitude, efficiency, azimuth, slope, module_power)
+        df (pandas.DataFrame): Dataframe with consumption data in long format.
+        pv_df (pandas.DataFrame): Dataframe with PV production data.
         
-        if df is not None:
-            # Extract the "P" column from the returned DataFrame
-            p_column = df["P"]
-            
-            # If final_df is empty, initialize it with the "time" column from the first configuration
-            if final_df.empty:
-                final_df["time"] = df["time"]
-            
-            # Add the "P" column for this configuration to the final DataFrame
-            final_df[f"P_{slope}_{azimuth}_{module_power}"] = p_column
+    Returns:
+        pandas.DataFrame: Merged dataframe with consumption and PV production.
+    """
+    # Merge consumption and PV data on timestamp
+    merged_df = pd.merge(df, pv_df[['datetime', 'P']], left_on='timestamp', right_on='datetime', how='left')
     
-    # Return the final DataFrame with results
-    return final_df
+    # Rename PV production column
+    merged_df.rename(columns={'P': 'pv_production'}, inplace=True)
+    
+    # Drop redundant datetime column
+    merged_df.drop(columns=['datetime'], inplace=True)
+    
+    return merged_df
 
 if __name__ == "__main__":
 
@@ -126,19 +114,13 @@ if __name__ == "__main__":
     latitude = 44.516  # Provided latitude
     longitude = 11.518  # Provided longitude
     efficiency = 0.23  # 23% efficiency
+    azimuth = 23
+    slope = 35
+    module_power = 0.47  # 470W module
 
-    PV_subsets = [
-        (35, 23, 0.47),  # Slope, Azimuth, PV Power
-        (35, -157, 0.47),  # Slope, Azimuth, PV Power
-        (35, 113, 0.47)   # Slope, Azimuth, PV Power
-    ]
+    df = calculate_pv_module_output(latitude, longitude, efficiency, azimuth, slope, module_power)
+    df_daily = df.set_index('datetime').resample('D').sum()
+    print(df_daily.head())
+    statistics = plot_gaussian_curve(df_daily['P'], label="PV Output (kW)")
 
-    """
-    # ------- DEBUG ------
-    azimuth = 23  # azimuth angle in degrees (0 = South, 90 = West, -90 = East, 180 = North)
-    slope = 35  # 35 degree tilt
-    PV_power = 0.47  # Peak power in kW (e.g., 300W = 0.3kW)
-    # ----------------------
-    """
 
-    # df = process_multiple_pv_configurations(latitude, longitude, efficiency, *PV_subsets)
