@@ -17,8 +17,8 @@ from fastmcp import FastMCP
 # Asynchronous support
 import asyncio
 
-from Consumption_preparation import load_csv, reprocess_csv_edistribuzione
-from PV_sim import calculate_pv_module_output
+from library.Consumption import load_csv, reprocess_csv_edistribuzione
+from library.PV import calculate_pv_module_output
 
 # Create a new FastMCP server instance
 mcp = FastMCP("csv-reader-server")

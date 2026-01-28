@@ -2,7 +2,7 @@ import requests
 import json
 import pandas as pd
 
-from Consumption_preparation import plot_gaussian_curve, load_csv, reprocess_csv_edistribuzione
+from library.Consumption import plot_gaussian_curve, load_csv, reprocess_csv_edistribuzione
 
 def calculate_pv_module_output(latitude, longitude, efficiency, azimuth, slope, module_power=0.5, system_losses=15, save_output="N"):
 
@@ -96,7 +96,7 @@ def add_pv_est(df, pv_df):
         
     Returns:
         pandas.DataFrame: Merged dataframe with consumption and PV production.
-    """
+    """ 
     # Merge consumption and PV data on timestamp
     merged_df = pd.merge(df, pv_df[['datetime', 'P']], left_on='timestamp', right_on='datetime', how='left')
     
@@ -122,5 +122,6 @@ if __name__ == "__main__":
     df_daily = df.set_index('datetime').resample('D').sum()
     print(df_daily.head())
     statistics = plot_gaussian_curve(df_daily['P'], label="PV Output (kW)")
+
 
 
